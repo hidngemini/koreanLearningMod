@@ -1,11 +1,16 @@
 package com.hidngemini.speakit.client;
 
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.random.RandomGenerator;
+
+import com.hidngemini.speakit.event.PlayerItemPickupCallback;
+import com.hidngemini.speakit.utils.HangulPhoneticConverter;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.DeltaTracker;
@@ -24,12 +29,14 @@ public class SpeakItClient implements ClientModInitializer {
 	private static final String languageName = "Korean";
 	private static final long CHALLENGE_TIME_MS = 5_000;
 
-	public static final ArrayList<Item> obtainedItems = new ArrayList<Item>();
+	public static final HashSet<Item> obtainedItems = new HashSet<Item>();
 
 	private static boolean isChallengeActive = false;
 	private static long challengeStartTime = 0;
 
 	public static ItemStack item;
+
+	private int tickCounter = 0;
 
 
 	@Override
@@ -47,7 +54,31 @@ public class SpeakItClient implements ClientModInitializer {
 
 		obtainedItems.add(Items.DIRT);
 
-		// add command
+		PlayerItemPickupCallback.EVENT.register((player, stack, addedCount) -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null && player.getUUID().equals(client.player.getUUID())) {
+                System.out.println("I (client player) received: " + stack.getDisplayName().getString() + " x" + addedCount);
+                
+                // rescan inventory
+				updateFromPlayerInventory(client);
+            }
+        });
+
+		ClientTickEvents.START_CLIENT_TICK.register((Minecraft client) -> {
+			// make sure in game and player exists
+            if (client.player == null || client.level == null) {
+                return;
+            }
+
+            tickCounter++;
+            
+            if (tickCounter >= 20) {
+                tickCounter = 0;
+                updateFromPlayerInventory(client);
+            }
+        });
+
+		// add forcechal command
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
                 ClientCommands.literal("forcechal")
@@ -58,6 +89,7 @@ public class SpeakItClient implements ClientModInitializer {
             );
         });
 
+		// add foundItems command
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(
                 ClientCommands.literal("foundItems")
@@ -80,10 +112,28 @@ public class SpeakItClient implements ClientModInitializer {
         });
 	}
 
+	private void updateFromPlayerInventory(Minecraft client) {
+        // get players inventory
+        var inventory = client.player.getInventory();
+
+        // loop thru inventory
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack item = inventory.getItem(i);
+            
+            if (!item.isEmpty()) {
+				obtainedItems.add(item.getItem());
+            }
+        }
+    }
+
 	public void triggerChallenge() {
 		// setup an item
-		// TODO: make this random
-		item = new ItemStack(Items.DIRT);
+        Item randomElement = obtainedItems.stream()
+            .skip(RandomGenerator.getDefault().nextInt(obtainedItems.size()))
+            .findFirst()
+            .orElse(null);
+
+		item = new ItemStack(randomElement);
 
 		// setup challange variables
 		isChallengeActive = true;
@@ -109,11 +159,9 @@ public class SpeakItClient implements ClientModInitializer {
 		// time left
 		float durAmt = (float) ((double) (currentTime - challengeStartTime)) / CHALLENGE_TIME_MS;
 
-		System.out.println(durAmt);
-
 		// honestly just a bunch of constants that i should move later
-		int rectWidth = 160;
-		int rectHeight = 40;
+		int rectWidth = 280;
+		int rectHeight = 50;
 		int barWidth = 3;
 		int yPos = 20;
 		int uiColour = 0x80101010;
@@ -165,29 +213,49 @@ public class SpeakItClient implements ClientModInitializer {
 		// remove the scale by 2 matrix to uhh not mess up the entire pause GUI
 		graphics.pose().popMatrix();
 
-		// compute text position;
-		int textX = 20 + xPos;
-		int textY = yPos + 5;
+		// text
+		{
+			// compute text position;
+			int textX = 30 + xPos;
+			int textY = yPos + 5;
 
-		// build text
-		StringBuilder displayText = new StringBuilder();
-		displayText.append(languageName);
-		displayText.append(" Word: ");
+			// build text
+			StringBuilder displayText = new StringBuilder();
+			displayText.append(languageName);
+			displayText.append(" Word: ");
 
-		// find other language name for the item
-		String translationKey = item.getItem().getDescriptionId();
-		String otherLangName = TargetLanguageManager.getTranslation(localeCode, translationKey);
-		displayText.append(otherLangName);
+			// find other language name for the item
+			String translationKey = item.getItem().getDescriptionId();
+			String otherLangName = TargetLanguageManager.getTranslation(localeCode, translationKey);
+			displayText.append(otherLangName);
 
-		int textColour = 0xFFFFFFFF;
+			int textColour = 0xFFFFFFFF;
+			int pronounciationColour = 0xFFFFFF00;
 
-		graphics.text(
-			Minecraft.getInstance().font,
-			displayText.toString(), 
-			textX, 
-			textY, 
-			textColour, 
-			true
-		);
+			graphics.text(
+				Minecraft.getInstance().font,
+				displayText.toString(), 
+				textX, 
+				textY, 
+				textColour, 
+				true
+			);
+
+			displayText = new StringBuilder();
+
+			// TODO: make this not just for korean lol
+			String pronounciation = HangulPhoneticConverter.toPhonetic(otherLangName);
+
+			displayText.append(pronounciation);
+
+			graphics.text(
+				Minecraft.getInstance().font,
+				displayText.toString(), 
+				textX, 
+				textY+20, 
+				pronounciationColour, 
+				true
+			);
+		}
     }
 }
