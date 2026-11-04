@@ -3,7 +3,7 @@ package com.hidngemini.speakit.client;
 import java.util.concurrent.CompletableFuture;
 
 public class TTSManager {
-    // TODO: lang int could be an enum?
+    
     public static void speak(String text, SpeakItLangauge lang) {
         switch (lang) {
             case SpeakItLangauge.KOREAN:
@@ -21,11 +21,16 @@ public class TTSManager {
                 if (os.contains("mac")) { // macOS uses Yuna
                     pb = new ProcessBuilder("say", "-v", "Yuna", hangulText);
                 } else if (os.contains("win")) {
-                    // TODO: windows tts
-                    System.err.println("[SpeakIt] TTS unsupported on Windows rn");
-                    return;
+                    String safeText = hangulText.replace("'", "''"); // prevent weird crashes
+
+                    // powershell command for tts
+                    String psCommand = "Add-Type -AssemblyName System.Speech; " +
+                                       "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; " +
+                                       "$s.SelectVoiceByHints([System.Speech.Synthesis.VoiceGender]::Female, [System.Speech.Synthesis.VoiceAge]::Adult, 0, [System.Globalization.CultureInfo]::GetCultureInfo('ko-KR')); " +
+                                       "$s.Speak('" + safeText + "');";
+
+                    pb = new ProcessBuilder("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", psCommand);
                 } else {
-                    // TODO: linux tts
                     System.err.println("[SpeakIt] TTS unsupported on Linux rn");
                     return;
                 }
