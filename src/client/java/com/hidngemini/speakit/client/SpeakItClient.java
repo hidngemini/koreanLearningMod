@@ -1,18 +1,19 @@
 package com.hidngemini.speakit.client;
 
-import java.lang.annotation.Target;
-
-import com.mojang.brigadier.arguments.IntegerArgumentType;
+import java.util.ArrayList;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -23,23 +24,28 @@ public class SpeakItClient implements ClientModInitializer {
 	private static final String languageName = "Korean";
 	private static final long CHALLENGE_TIME_MS = 5_000;
 
+	public static final ArrayList<Item> obtainedItems = new ArrayList<Item>();
+
 	private static boolean isChallengeActive = false;
 	private static long challengeStartTime = 0;
+
+	public static ItemStack item;
 
 
 	@Override
 	public void onInitializeClient() {
 		TargetLanguageManager.loadTargetLanguage(localeCode);
 
+		// add HUD element
 		HudElementRegistry.attachElementBefore(
             VanillaHudElements.CHAT, 
             MY_HUD_ELEMENT, 
             (graphics, deltaTracker) -> {
-				ItemStack itemStack = new ItemStack(Items.DIRT);
-
-                renderPopup(graphics, deltaTracker, itemStack);
+                renderPopup(graphics, deltaTracker);
             }
         );
+
+		obtainedItems.add(Items.DIRT);
 
 		// add command
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
@@ -51,14 +57,47 @@ public class SpeakItClient implements ClientModInitializer {
 					})
             );
         });
+
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            dispatcher.register(
+                ClientCommands.literal("foundItems")
+					.executes(context -> {
+						FabricClientCommandSource source = context.getSource();
+
+						StringBuilder sb = new StringBuilder();
+						
+						// iterate through items and add them to the sb
+						for (Item item : obtainedItems) {
+							ItemStack i = new ItemStack(item);
+							sb.append(i.getItemName().getString());
+							sb.append(" ");
+						}
+
+						source.sendFeedback(Component.literal(sb.toString()));
+						return 1;
+					})
+            );
+        });
 	}
 
 	public void triggerChallenge() {
+		// setup an item
+		// TODO: make this random
+		item = new ItemStack(Items.DIRT);
+
+		// setup challange variables
 		isChallengeActive = true;
 		challengeStartTime = System.currentTimeMillis();
+
+		// get item name in other language
+		String translationKey = item.getItem().getDescriptionId();
+		String otherLangName = TargetLanguageManager.getTranslation(localeCode, translationKey);
+
+		// say it for the play
+		TTSManager.speak(otherLangName, SpeakItLangauge.KOREAN);
 	}
 
-	private void renderPopup(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, ItemStack item) {
+	private void renderPopup(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
 		if (!isChallengeActive) return;
 		
 		long currentTime = System.currentTimeMillis();
@@ -121,7 +160,7 @@ public class SpeakItClient implements ClientModInitializer {
     	int itemY = Math.round((yPos + (rectHeight - itemResolution * itemScaleFactor) / 2) / itemScaleFactor); // center item vertically
 
 		// draw the item
-		graphics.item(item, itemX, itemY);
+		graphics.item(SpeakItClient.item, itemX, itemY);
 
 		// remove the scale by 2 matrix to uhh not mess up the entire pause GUI
 		graphics.pose().popMatrix();

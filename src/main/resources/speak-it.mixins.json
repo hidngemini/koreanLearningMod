@@ -3,7 +3,7 @@
 	"package": "com.hidngemini.speakit.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"ExampleMixin"
+		"PlayerInventoryMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
