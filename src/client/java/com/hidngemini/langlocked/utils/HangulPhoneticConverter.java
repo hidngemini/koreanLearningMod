@@ -1,4 +1,4 @@
-package com.hidngemini.speakit.utils;
+package com.hidngemini.langlocked.utils;
 
 import io.github.jaewonpro.HangulUtils;
 import java.util.List;

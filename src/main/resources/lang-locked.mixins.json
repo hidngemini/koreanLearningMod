@@ -1,9 +1,9 @@
 {
 	"required": true,
-	"package": "com.hidngemini.speakit.client.mixin",
+	"package": "com.hidngemini.langlocked.mixin",
 	"compatibilityLevel": "JAVA_25",
-	"client": [
-		"ExampleClientMixin"
+	"mixins": [
+		"PlayerInventoryMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

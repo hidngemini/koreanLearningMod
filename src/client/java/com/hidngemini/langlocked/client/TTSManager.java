@@ -1,12 +1,12 @@
-package com.hidngemini.speakit.client;
+package com.hidngemini.langlocked.client;
 
 import java.util.concurrent.CompletableFuture;
 
 public class TTSManager {
     
-    public static void speak(String text, SpeakItLangauge lang) {
+    public static void speak(String text, LangLockedLangauge lang) {
         switch (lang) {
-            case SpeakItLangauge.KOREAN:
+            case LangLockedLangauge.KOREAN:
                 speakKorean(text);
                 break;
         }

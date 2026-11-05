@@ -1,4 +1,4 @@
-package com.hidngemini.speakit.event;
+package com.hidngemini.langlocked.event;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;

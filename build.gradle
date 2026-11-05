@@ -4,15 +4,16 @@ plugins {
 }
 
 repositories {
-	maven { name = "Fabric"; url = "https://maven.fabricmc.net/" }
 	mavenCentral()
+	maven { name = "Fabric"; url = "https://maven.fabricmc.net/" }
+	maven { url = 'https://maven.maxhenkel.de/repository/public' }
 }
 
 loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"speak-it" {
+		"lang-locked" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}
@@ -20,12 +21,23 @@ loom {
 }
 
 dependencies {
+	// fabric and minecraft
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-    implementation "io.github.jaewon-pro:hangul4j:0.1.0" // hangul!
+
+	// hangul text utils
+    implementation "io.github.jaewon-pro:hangul4j:0.1.0" 
 	include "io.github.jaewon-pro:hangul4j:0.1.0"
+
+	// STT
+	implementation 'com.alphacephei:vosk:0.3.45'
+	include 'com.alphacephei:vosk:0.3.45'
+	implementation 'net.java.dev.jna:jna:5.13.0'
+	include 'net.java.dev.jna:jna:5.13.0'
+
+	// SimpleVoiceChat
+	implementation "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
 }
 
 processResources {

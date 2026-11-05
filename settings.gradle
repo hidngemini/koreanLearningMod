@@ -10,4 +10,4 @@ pluginManagement {
 }
 
 // Should match your modid
-rootProject.name = 'speak-it'
+rootProject.name = 'lang-locked'

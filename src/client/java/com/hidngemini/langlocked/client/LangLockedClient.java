@@ -1,19 +1,22 @@
-package com.hidngemini.speakit.client;
+package com.hidngemini.langlocked.client;
 
 import java.util.HashSet;
 import java.util.random.RandomGenerator;
 
-import com.hidngemini.speakit.event.PlayerItemPickupCallback;
-import com.hidngemini.speakit.utils.HangulPhoneticConverter;
+import com.hidngemini.langlocked.event.PlayerItemPickupCallback;
+import com.hidngemini.langlocked.utils.HangulPhoneticConverter;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
@@ -22,7 +25,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-public class SpeakItClient implements ClientModInitializer {
+public class LangLockedClient implements ClientModInitializer {
 
 	public static final Identifier MY_HUD_ELEMENT = Identifier.fromNamespaceAndPath("speakit", "redwindow");
 	private static final String localeCode = "ko_kr";
@@ -37,6 +40,14 @@ public class SpeakItClient implements ClientModInitializer {
 	public static ItemStack item;
 
 	private int tickCounter = 0;
+
+	// add a keybind!
+	public static final KeyMapping TRANSLATE_KEY = new KeyMapping(
+        "key.langlocked.speak", 
+        InputConstants.Type.KEYBOARD, 
+        InputConstants.KEYCODE_X,
+        KeyMapping.Category.MISC
+    );
 
 
 	@Override
@@ -54,11 +65,12 @@ public class SpeakItClient implements ClientModInitializer {
 
 		obtainedItems.add(Items.DIRT);
 
+        // initialize keybind
+        KeyMappingHelper.registerKeyMapping(TRANSLATE_KEY);
+
 		PlayerItemPickupCallback.EVENT.register((player, stack, addedCount) -> {
             Minecraft client = Minecraft.getInstance();
             if (client.player != null && player.getUUID().equals(client.player.getUUID())) {
-                System.out.println("I (client player) received: " + stack.getDisplayName().getString() + " x" + addedCount);
-                
                 // rescan inventory
 				updateFromPlayerInventory(client);
             }
@@ -144,7 +156,7 @@ public class SpeakItClient implements ClientModInitializer {
 		String otherLangName = TargetLanguageManager.getTranslation(localeCode, translationKey);
 
 		// say it for the play
-		TTSManager.speak(otherLangName, SpeakItLangauge.KOREAN);
+		TTSManager.speak(otherLangName, LangLockedLangauge.KOREAN);
 	}
 
 	private void renderPopup(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
@@ -208,7 +220,7 @@ public class SpeakItClient implements ClientModInitializer {
     	int itemY = Math.round((yPos + (rectHeight - itemResolution * itemScaleFactor) / 2) / itemScaleFactor); // center item vertically
 
 		// draw the item
-		graphics.item(SpeakItClient.item, itemX, itemY);
+		graphics.item(LangLockedClient.item, itemX, itemY);
 
 		// remove the scale by 2 matrix to uhh not mess up the entire pause GUI
 		graphics.pose().popMatrix();
@@ -228,6 +240,8 @@ public class SpeakItClient implements ClientModInitializer {
 			String translationKey = item.getItem().getDescriptionId();
 			String otherLangName = TargetLanguageManager.getTranslation(localeCode, translationKey);
 			displayText.append(otherLangName);
+
+			System.out.println(displayText.toString());
 
 			int textColour = 0xFFFFFFFF;
 			int pronounciationColour = 0xFFFFFF00;

@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
-	"id": "speak-it",
+	"id": "lang-locked",
 	"version": "${version}",
-	"name": "Speak It",
+	"name": "Lang Locked",
 	"description": "This is an example description! Tell everyone what your mod is about!",
 	"authors": [
 		"Me!"
@@ -12,27 +12,27 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/speak-it/icon.png",
+	"icon": "assets/langlocked/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.hidngemini.speakit.SpeakIt"
+			"com.hidngemini.langlocked.LangLocked"
 		],
 		"client": [
-			"com.hidngemini.speakit.client.SpeakItClient"
+			"com.hidngemini.langlocked.client.LangLockedClient"
+		],
+		"voicechat": [
+			"com.hidngemini.langlocked.voicechat.LangLockedSVCPlugin"
 		]
 	},
 	"mixins": [
-		"speak-it.mixins.json",
-		{
-			"config": "speak-it.client.mixins.json",
-			"environment": "client"
-		}
+		"lang-locked.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.20.1",
 		"minecraft": "~26.3",
 		"java": ">=25",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"voicechat_api": ">=2.5.0"
 	}
 }

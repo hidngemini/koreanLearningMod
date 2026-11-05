@@ -1,4 +1,4 @@
-package com.hidngemini.speakit.client;
+package com.hidngemini.langlocked.client;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -29,14 +29,14 @@ public class TargetLanguageManager {
             Identifier fileId = Identifier.fromNamespaceAndPath("minecraft", "lang/" + localeCode.toLowerCase() + ".json");
             
             try (InputStream stream = client.getResourceManager().open(fileId);
-                 InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+                InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
                 
                 targetLanguageMap = GSON.fromJson(reader, new TypeToken<>(){}.getType());
                 isLoaded = true;
-                System.out.println("[SpeakIt] SUCCESS! Loaded " + targetLanguageMap.size() + " translation keys for " + localeCode);
+                System.out.println("[LangLocked] SUCCESS! Loaded " + targetLanguageMap.size() + " translation keys for " + localeCode);
             }
         } catch (Exception e) {
-            System.err.println("[SpeakIt] FAILED to load language file:");
+            System.err.println("[LangLocked] FAILED to load language file:");
             e.printStackTrace();
         }
     }
